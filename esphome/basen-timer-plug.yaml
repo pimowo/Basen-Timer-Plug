@@ -1,4 +1,4 @@
-# Basen Timer Plug (v0.2.0)
+# Basen Timer Plug (v0.2.1)
 # Lokalny sterownik czasowy dla Sonoff S26 / AIS Dom S26
 # Logika: Auto Cycle ON/OFF z harmonogramem godzinowym
 
@@ -30,6 +30,9 @@ captive_portal:
 web_server:
   port: 80
 
+preferences:
+  flash_write_interval: 5min
+
 time:
   - platform: sntp
     id: ntp_time
@@ -39,12 +42,14 @@ switch:
   - platform: gpio
     id: relay
     name: "Relay"
+    icon: mdi:power-socket-eu
     pin: GPIO12
     restore_mode: RESTORE_DEFAULT_OFF
 
   - platform: template
     id: auto_mode
     name: "Auto Cycle"
+    icon: mdi:timer-sync
     lambda: |-
       return id(auto_enabled);
     turn_on_action:
@@ -64,6 +69,7 @@ binary_sensor:
       number: GPIO0
       inverted: true
     name: "Button"
+    internal: true
     on_press:
       - switch.toggle: auto_mode
 
@@ -133,6 +139,15 @@ number:
     step: 1
     initial_value: 0
 
+sensor:
+  - platform: template
+    id: cycle_counter_sensor
+    name: "Cycles"
+    unit_of_measurement: "cycles"
+    icon: mdi:counter
+    lambda: |-
+      return id(cycle_counter);
+
 globals:
   - id: auto_enabled
     type: bool
@@ -153,6 +168,16 @@ globals:
     type: uint32_t
     restore_value: yes
     initial_value: "0"
+
+on_boot:
+  priority: -100
+  then:
+    - lambda: |-
+        if (id(auto_enabled)) {
+          id(relay).turn_on();
+          id(relay_phase) = true;
+          id(phase_start) = millis();
+        }
 
 interval:
   - interval: 1s
@@ -179,6 +204,7 @@ interval:
                 if (!allowed) {
                   id(relay).turn_off();
                   id(relay_phase) = true;
+                  id(phase_start) = millis();
                   return;
                 }
 
@@ -196,6 +222,7 @@ interval:
                   // Zwiększ licznik przy przejściu OFF → ON
                   if (id(relay_phase)) {
                     id(cycle_counter)++;
+                    id(cycle_counter_sensor).publish_state(id(cycle_counter));
                   }
 
                   // Włącz/wyłącz relay
