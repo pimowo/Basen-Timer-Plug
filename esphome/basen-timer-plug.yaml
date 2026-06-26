@@ -6,6 +6,15 @@ esphome:
   name: basen-timer-plug
   friendly_name: Basen Timer Plug
 
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          if (id(auto_enabled)) {
+            id(relay_phase) = true;
+            id(phase_start) = millis();
+          }
+
 esp8266:
   board: esp01_1m
 
@@ -41,7 +50,7 @@ time:
 switch:
   - platform: gpio
     id: relay
-    name: "Relay"
+    name: "Output Relay"
     icon: mdi:power-socket-eu
     pin: GPIO12
     restore_mode: RESTORE_DEFAULT_OFF
@@ -62,6 +71,8 @@ switch:
       - lambda: |-
           id(auto_enabled) = false;
           id(relay).turn_off();
+          id(relay_phase) = true;
+          id(phase_start) = millis();
 
 binary_sensor:
   - platform: gpio
@@ -142,9 +153,10 @@ number:
 sensor:
   - platform: template
     id: cycle_counter_sensor
-    name: "Cycles"
+    name: "Cycle Counter"
     unit_of_measurement: "cycles"
     icon: mdi:counter
+    update_interval: never
     lambda: |-
       return id(cycle_counter);
 
@@ -169,16 +181,6 @@ globals:
     restore_value: yes
     initial_value: "0"
 
-on_boot:
-  priority: -100
-  then:
-    - lambda: |-
-        if (id(auto_enabled)) {
-          id(relay).turn_on();
-          id(relay_phase) = true;
-          id(phase_start) = millis();
-        }
-
 interval:
   - interval: 1s
     then:
@@ -199,7 +201,13 @@ interval:
                 int stop_minutes = (int)id(stop_hour).state * 60 + (int)id(stop_minute).state;
 
                 // Sprawdź, czy jesteśmy w harmonogramie
-                bool allowed = now_minutes >= start_minutes && now_minutes < stop_minutes;
+                // Obsługuje zakresy normalne (08:00-20:00) i przez północ (22:00-06:00)
+                bool allowed;
+                if (start_minutes <= stop_minutes) {
+                  allowed = now_minutes >= start_minutes && now_minutes < stop_minutes;
+                } else {
+                  allowed = now_minutes >= start_minutes || now_minutes < stop_minutes;
+                }
 
                 if (!allowed) {
                   id(relay).turn_off();
