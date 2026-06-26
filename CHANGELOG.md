@@ -10,15 +10,20 @@ Projekt korzysta z wersjonowania zgodnego z Semantic Versioning.
 
 ### Dodano
 
-- Sensor "Cycles" - wyświetlanie licznika cykli w WWW
+- Sensor "Cycle Counter" - wyświetlanie licznika cykli w WWW
 - Obsługa on_boot - przywrócenie stanu po restarcie ESP
+- Publikowanie licznika cykli przy starcie urządzenia
 - Ikony dla elementów interfejsu (mdi:power-socket-eu, mdi:timer-sync)
 - Preferences z flash_write_interval: 5min - optymalizacja Flash pamięci
+- Komentarz wyjaśniający bezpieczeństwo overflow millis()
 
 ### Naprawiono
 
 - Reset phase_start po wyjściu z harmonogramu (zapobiega przeskakiwaniu timera)
+- Bezpieczne wyłączenie relay gdy czas NTP się nie synchronizuje
+- Obsługa harmonogramu przez północ (22:00-06:00)
 - Przycisk fizyczny oznaczony jako internal (nie pokazuje się w Home Assistant)
+- Ujednolicony styl kodu (spacje wokół operatorów)
 - Logika obsługi stanu po starcie urządzenia
 
 ---
@@ -57,9 +62,8 @@ Projekt korzysta z wersjonowania zgodnego z Semantic Versioning.
 
 ### 0.3.0
 
-- Sensor "Status" (Running / Stopped / Out of schedule)
-- Sensor "Remaining" - pozostały czas (HH:MM)
-- Sensor "Cycles" - licznik cykli (już w 0.2.1)
+- text_sensor "Status" (RUNNING / OFF / OUT OF SCHEDULE / WAITING FOR TIME)
+- sensor "Remaining Time" - pozostały czas do końca fazy (MM:SS)
 
 ### 1.0.0
 
