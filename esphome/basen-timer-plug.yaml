@@ -1,6 +1,6 @@
-# Basen Timer Plug (szablon startowy)
-# Docelowy projekt wymaga rozbudowanej logiki i własnego panelu WWW.
-# Ten plik stanowi gotowy punkt wyjścia dla Sonoff S26 / AIS Dom S26.
+# Basen Timer Plug (v0.2.0)
+# Lokalny sterownik czasowy dla Sonoff S26 / AIS Dom S26
+# Logika: Auto Cycle ON/OFF z harmonogramem godzinowym
 
 esphome:
   name: basen-timer-plug
@@ -49,10 +49,13 @@ switch:
       return id(auto_enabled);
     turn_on_action:
       - lambda: |-
-          id(auto_enabled)=true;
+          id(auto_enabled) = true;
+          id(relay_phase) = true;
+          id(phase_start) = millis();
+          id(relay).turn_on();
     turn_off_action:
       - lambda: |-
-          id(auto_enabled)=false;
+          id(auto_enabled) = false;
           id(relay).turn_off();
 
 binary_sensor:
@@ -61,6 +64,8 @@ binary_sensor:
       number: GPIO0
       inverted: true
     name: "Button"
+    on_press:
+      - switch.toggle: auto_mode
 
 status_led:
   pin:
@@ -139,68 +144,64 @@ globals:
     restore_value: no
     initial_value: "true"
 
+  - id: phase_start
+    type: uint32_t
+    restore_value: no
+    initial_value: "0"
+
   - id: cycle_counter
     type: uint32_t
     restore_value: yes
     initial_value: "0"
-
-  - id: cycle_enabled
-    type: bool
-    restore_value: yes
-    initial_value: "false"
-
-button:
-  - platform: template
-    name: "Start Cycle"
-    on_press:
-      - lambda: |-
-          id(cycle_enabled)=true;
-
-  - platform: template
-    name: "Stop Cycle"
-    on_press:
-      - lambda: |-
-          id(cycle_enabled)=false;
-          id(relay).turn_off();
 
 interval:
   - interval: 1s
     then:
       - if:
           condition:
-            lambda: 'return id(cycle_enabled);'
+            lambda: 'return id(auto_enabled);'
           then:
             - lambda: |-
-                static bool phase = false;
-                static uint32_t phase_start = 0;
-
                 auto now = id(ntp_time).now();
 
-                if (now.is_valid()) {
-                  bool allowed =
-                      now.hour >= (int)id(start_hour).state &&
-                      now.hour < (int)id(stop_hour).state;
-
-                  if (!allowed) {
-                    id(relay).turn_off();
-                    phase = false;
-                    phase_start = millis();
-                    return;
-                  }
+                if (!now.is_valid()) {
+                  return;
                 }
 
-                uint32_t elapsed = (millis() - phase_start) / 1000;
+                // Konwertuj bieżący czas na minuty
+                int now_minutes = now.hour * 60 + now.minute;
+                int start_minutes = (int)id(start_hour).state * 60 + (int)id(start_minute).state;
+                int stop_minutes = (int)id(stop_hour).state * 60 + (int)id(stop_minute).state;
 
-                uint32_t target = phase
+                // Sprawdź, czy jesteśmy w harmonogramie
+                bool allowed = now_minutes >= start_minutes && now_minutes < stop_minutes;
+
+                if (!allowed) {
+                  id(relay).turn_off();
+                  id(relay_phase) = true;
+                  return;
+                }
+
+                // Oblicz czas trwania bieżącej fazy
+                uint32_t elapsed = (millis() - id(phase_start)) / 1000;
+                uint32_t target = id(relay_phase)
                   ? (uint32_t)id(on_minutes).state * 60
                   : (uint32_t)id(off_minutes).state * 60;
 
+                // Zmień fazę jeśli czas upłynął
                 if (elapsed >= target) {
-                  phase = !phase;
-                  phase_start = millis();
+                  id(relay_phase) = !id(relay_phase);
+                  id(phase_start) = millis();
 
-                  if (phase)
+                  // Zwiększ licznik przy przejściu OFF → ON
+                  if (id(relay_phase)) {
+                    id(cycle_counter)++;
+                  }
+
+                  // Włącz/wyłącz relay
+                  if (id(relay_phase)) {
                     id(relay).turn_on();
-                  else
+                  } else {
                     id(relay).turn_off();
+                  }
                 }
