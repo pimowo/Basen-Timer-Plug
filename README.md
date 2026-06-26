@@ -1,116 +1,119 @@
-````markdown
 # 🏊 Basen Timer Plug
 
-**Basen Timer Plug** to lokalny sterownik czasowy oparty na **ESPHome** dla urządzeń z **ESP8266** i **ESP32**.
+Lokalny sterownik czasowy oparty na **ESPHome** dla urządzeń z **ESP8266** i **ESP32**.
 
-Projekt powstał z myślą o automatycznym sterowaniu urządzeniami wymagającymi pracy cyklicznej, np.:
+Projekt został stworzony do sterowania urządzeniami pracującymi cyklicznie, takimi jak:
 
-- 🏊 pompy basenowej
-- 🌬️ wentylatora
-- 💨 kompresora
-- 💡 oświetlenia
-- 🚰 pompki
-- ⚙️ innych urządzeń zasilanych przez przekaźnik
+- 🏊 Pompa basenowa
+- 🌬️ Wentylator
+- 💨 Kompresor
+- 💡 Oświetlenie
+- 🚰 Pompa
+- ⚙️ Dowolne urządzenie sterowane przekaźnikiem
 
-Urządzenie działa **całkowicie lokalnie**. Nie wymaga Home Assistanta ani dostępu do Internetu.
+> **Cała logika działa lokalnie na ESP.**
+>
+> Home Assistant jest opcjonalny i służy jedynie do monitorowania oraz zmiany ustawień.
 
-Jeżeli Home Assistant jest dostępny, urządzenie automatycznie udostępnia wszystkie encje przez ESPHome API.
+---
+
+# Dlaczego ten projekt?
+
+Większość timerów dla ESPHome wymaga automatyzacji w Home Assistant.
+
+**Basen Timer Plug** wykonuje całą logikę bezpośrednio na ESP8266/ESP32.
+
+Dzięki temu urządzenie:
+
+- działa bez Home Assistanta,
+- działa bez Internetu,
+- po awarii HA nadal pracuje zgodnie z harmonogramem,
+- może być konfigurowane z poziomu przeglądarki WWW.
 
 ---
 
 # Funkcje
 
-- ✅ Cykliczna praca ON/OFF
-- ✅ Konfigurowany czas ON
-- ✅ Konfigurowany czas OFF
-- ✅ Harmonogram godzin pracy
-- ✅ Automatyczne wyłączenie poza harmonogramem
-- ✅ Sterowanie z poziomu strony WWW
-- ✅ Integracja z Home Assistant
-- ✅ OTA (aktualizacja przez WiFi)
-- ✅ Zapamiętywanie ustawień po zaniku zasilania
+| Funkcja | Status |
+|---------|:------:|
+| Cykliczne ON/OFF | ✅ |
+| Konfigurowany czas ON | ✅ |
+| Konfigurowany czas OFF | ✅ |
+| Harmonogram pracy | 🚧 |
+| Strona WWW | ✅ |
+| Home Assistant | ✅ |
+| OTA | ✅ |
+| Praca bez HA | ✅ |
+| Zapamiętywanie ustawień | 🚧 |
+| Licznik cykli | 🚧 |
+| Pozostały czas | 🚧 |
+
+---
+
+# Schemat działania
+
+```
+08:00
+ │
+ ├── ON 15 min
+ ├── OFF 45 min
+ ├── ON 15 min
+ ├── OFF 45 min
+ │
+20:00
+ │
+ └── Relay OFF
+```
 
 ---
 
 # Obsługiwane urządzenia
 
-Obecnie projekt jest przygotowany dla:
+Aktualnie:
 
 - Sonoff S26
 - AIS Dom S26
 
-W przyszłości planowane jest wsparcie dla:
+Planowane:
 
 - Sonoff Basic
 - Sonoff Mini
 - ESP8266
 - ESP32
-- innych urządzeń opartych o ESPHome
-
----
-
-# Wymagania
-
-- ESPHome
-- ESP8266 lub ESP32
-- sieć WiFi 2.4 GHz
 
 ---
 
 # Instalacja
 
-1. Sklonuj repozytorium.
+Sklonuj repozytorium:
 
 ```bash
 git clone https://github.com/pimowo/Basen-Timer-Plug.git
-````
-
-2. Otwórz plik:
-
-```
-basen-timer-plug.yaml
 ```
 
-3. Uzupełnij dane WiFi.
+Otwórz:
 
-4. Skompiluj projekt w ESPHome.
+```
+esphome/basen-timer-plug.yaml
+```
 
-5. Wgraj firmware.
+Uzupełnij dane WiFi.
+
+Skompiluj projekt.
+
+Wgraj firmware.
 
 ---
 
-# Konfiguracja
+# Roadmap
 
-Parametry dostępne z poziomu WWW:
-
-* ON Time
-* OFF Time
-* Start Hour
-* Start Minute
-* Stop Hour
-* Stop Minute
-* Auto Cycle
-
----
-
-# Plan rozwoju
-
-## v0.2
-
-* Cykliczna praca ON/OFF
-
-## v0.3
-
-* Harmonogram godzin
-
-## v0.4
-
-* Licznik cykli
-* Pozostały czas
-
-## v1.0
-
-* Stabilne wydanie
+- [x] Utworzenie projektu
+- [x] Konfiguracja ESPHome
+- [ ] Cykliczny timer
+- [ ] Harmonogram godzin
+- [ ] Licznik cykli
+- [ ] Pozostały czas
+- [ ] Wydanie v1.0
 
 ---
 
@@ -118,7 +121,4 @@ Parametry dostępne z poziomu WWW:
 
 Projekt udostępniony na licencji MIT.
 
-Szczegóły znajdują się w pliku LICENSE.
-
-```
-```
+Szczegóły znajdują się w pliku **LICENSE**.
